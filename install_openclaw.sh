@@ -194,7 +194,7 @@ configure_whatsapp() {
 
     print_step "启用并配置 WhatsApp 渠道..."
     openclaw config set channels.whatsapp.enabled true
-    openclaw config set channels.whatsapp.dmPolicy "pairing"
+    openclaw config set channels.whatsapp.dmPolicy "allowlist"
 
     if [ -n "$WA_ALLOW_LIST" ]; then
         WA_ARRAY=$(echo "$WA_ALLOW_LIST" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | awk '{printf "\"%s\",", $0}' | sed 's/,$//')
