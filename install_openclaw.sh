@@ -99,8 +99,18 @@ collect_config() {
 
     # --- API 配置 ---
     echo -e "${BLUE}>>> API 配置（MiniMax 示例，可换成其他兼容 Anthropic 的服务）${NC}"
-    read -p "API Base URL [https://api.minimaxi.com/anthropic]: " API_BASE_URL
-    API_BASE_URL=${API_BASE_URL:-"https://api.minimaxi.com/anthropic"}
+    echo "请选择 MiniMax API 区域："
+    echo "  1) 国际版 (api.minimax.io)     - 海外用户推荐（默认）"
+    echo "  2) 国内版 (api.minimaxi.com)   - 中国大陆用户推荐"
+    read -p "请输入数字 [1/2，默认 1]: " API_REGION
+    if [[ "$API_REGION" == "2" ]]; then
+        DEFAULT_BASE_URL="https://api.minimaxi.com/anthropic"
+    else
+        DEFAULT_BASE_URL="https://api.minimax.io/anthropic"
+    fi
+
+    read -p "API Base URL [$DEFAULT_BASE_URL]: " API_BASE_URL
+    API_BASE_URL=${API_BASE_URL:-"$DEFAULT_BASE_URL"}
 
     read -p "Model ID [MiniMax-M2.7]: " MODEL_ID
     MODEL_ID=${MODEL_ID:-"MiniMax-M2.7"}
