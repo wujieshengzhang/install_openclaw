@@ -2,10 +2,10 @@
 # 一键安装 Claude Code (Minimax 版) - 幂等版本，支持国内/国际区域
 # 适用于 Linux，需要 sudo 权限
 # 用法:
-#   ./install-claude-minimax.sh                    # 交互式输入 API Key，默认国内版
-#   ./install-claude-minimax.sh -r global          # 使用国际版
-#   ./install-claude-minimax.sh --region china     # 使用国内版
-#   MINIMAX_API_KEY=your_key MINIMAX_REGION=global ./install-claude-minimax.sh   # 非交互式
+#   ./install-claude-minimax.sh                    # 交互式选择区域及 API Key，默认国际版
+#   ./install-claude-minimax.sh -r china           # 跳过交互，直接使用国内版
+#   ./install-claude-minimax.sh --region global    # 跳过交互，直接使用国际版
+#   MINIMAX_API_KEY=your_key MINIMAX_REGION=global ./install-claude-minimax.sh   # 完全非交互式
 
 set -e
 
@@ -16,8 +16,8 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# 默认区域 (国内版)
-REGION="global"
+# 默认区域 (国际版)，但若通过参数或环境变量指定则覆盖
+REGION=""
 
 # 解析命令行参数
 while [[ $# -gt 0 ]]; do
@@ -34,27 +34,51 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# 支持环境变量覆盖区域
+# 支持环境变量覆盖区域（优先级高于参数）
 if [ -n "$MINIMAX_REGION" ]; then
     REGION="$MINIMAX_REGION"
 fi
 
-# 验证区域有效性
+# 如果区域未指定，则进入交互式选择
+if [ -z "$REGION" ]; then
+    echo -e "${BLUE}>>> MiniMax API 区域选择${NC}"
+    echo "请选择 MiniMax API 区域："
+    echo "  1) 国际版 (api.minimax.io)     - 海外用户推荐（默认）"
+    echo "  2) 国内版 (api.minimaxi.com)   - 中国大陆用户推荐"
+    read -p "请输入数字 [1/2，默认 1]: " API_REGION
+    if [[ "$API_REGION" == "2" ]]; then
+        REGION="china"
+    else
+        REGION="global"
+    fi
+fi
+
+# 验证区域有效性并设置默认 Base URL
 if [[ "$REGION" != "china" && "$REGION" != "global" ]]; then
     echo -e "${RED}错误: 区域参数只能是 'china' 或 'global'${NC}"
     exit 1
 fi
 
-# 根据区域设置 BASE_URL
 if [ "$REGION" = "global" ]; then
-    BASE_URL="https://api.minimax.io/anthropic"
+    DEFAULT_BASE_URL="https://api.minimax.io/anthropic"
     REGION_DISPLAY="国际版"
 else
-    BASE_URL="https://api.minimaxi.com/anthropic"
+    DEFAULT_BASE_URL="https://api.minimaxi.com/anthropic"
     REGION_DISPLAY="国内版"
 fi
 
+# 允许用户手动覆盖 Base URL（交互式时）
+if [ -z "$MINIMAX_REGION" ] && [ $# -eq 0 ]; then
+    echo -e "${BLUE}>>> API Base URL 确认${NC}"
+    read -p "API Base URL [$DEFAULT_BASE_URL]: " INPUT_BASE_URL
+    BASE_URL="${INPUT_BASE_URL:-$DEFAULT_BASE_URL}"
+else
+    # 非交互式则直接使用默认 Base URL
+    BASE_URL="$DEFAULT_BASE_URL"
+fi
+
 echo -e "${GREEN}=== Claude Code 安装与配置 (Minimax $REGION_DISPLAY) ===${NC}"
+echo -e "API Base URL: ${YELLOW}$BASE_URL${NC}"
 
 # ---------- 函数定义 ----------
 check_command() {
